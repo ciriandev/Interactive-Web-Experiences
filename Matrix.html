@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix Effect with RGB Control</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            height: 100vh;
+            background-color: black;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #slider-container,
+        #rgb-container {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            display: none;  /* Initially hidden */
+        }
+        #slider {
+            width: 200px;
+        }
+        #percentage {
+            color: white;
+            margin-left: 10px;
+        }
+        #rgb-container {
+            bottom: 50px;
+            left: 10px;
+            z-index: 10;
+            display: flex;
+            gap: 10px;
+        }
+        .rgb-input {
+            width: 50px;
+            text-align: center;
+            background-color: #222;
+            color: #0F0;
+            font-size: 14px;
+            border-radius: 5px;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas></canvas>
+
+    <div id="slider-container">
+        <input id="slider" type="range" min="0" max="100" value="0">
+        <span id="percentage">0%</span>
+    </div>
+
+    <!-- Contenedor para los campos RGB -->
+    <div id="rgb-container">
+        <input id="r" class="rgb-input" type="number" min="0" max="255" value="0">
+        <input id="g" class="rgb-input" type="number" min="0" max="255" value="255">
+        <input id="b" class="rgb-input" type="number" min="0" max="255" value="0">
+    </div>
+
+    <script>
+        const canvas = document.querySelector('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Variables para el tamaño del canvas y las columnas
+        let canvasWidth = window.innerWidth;
+        let canvasHeight = window.innerHeight;
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+
+        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        const specialCharacters = 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん';
+        const allCharacters = letters + specialCharacters;
+        const fontSize = 16;
+
+        // Cálculo dinámico de las columnas basado en el tamaño de la pantalla
+        const getColumns = () => Math.floor(canvas.width / fontSize);
+        const columns = getColumns();
+        const drops = Array.from({ length: columns }, () => 1);
+
+        const slider = document.getElementById('slider');
+        const percentageDisplay = document.getElementById('percentage');
+        const rInput = document.getElementById('r');
+        const gInput = document.getElementById('g');
+        const bInput = document.getElementById('b');
+        const rgbContainer = document.getElementById('rgb-container');
+        const sliderContainer = document.getElementById('slider-container');
+
+        // Mostrar los contenedores cuando el ratón está sobre la pantalla
+        document.addEventListener('mousemove', (e) => {
+            sliderContainer.style.display = 'block';
+            rgbContainer.style.display = 'block';
+        });
+
+        // Ocultar los contenedores si el ratón se mueve fuera
+        document.addEventListener('mouseleave', () => {
+            sliderContainer.style.display = 'none';
+            rgbContainer.style.display = 'none';
+        });
+
+        // Actualizar el valor porcentual al mover la barra deslizante
+        slider.addEventListener('input', (e) => {
+            percentageDisplay.textContent = `${e.target.value}%`;
+        });
+
+        // Función para obtener el color RGB a partir de los valores de los inputs
+        function getRGBColor() {
+            const r = parseInt(rInput.value, 10);
+            const g = parseInt(gInput.value, 10);
+            const b = parseInt(bInput.value, 10);
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        // Función para cambiar el color de los elementos de la interfaz
+        function updateInterfaceColor(color) {
+            rgbContainer.style.backgroundColor = color;
+            sliderContainer.style.backgroundColor = color;
+            percentageDisplay.style.color = color;
+            const rgbInputs = document.querySelectorAll('.rgb-input');
+            rgbInputs.forEach(input => {
+                input.style.color = color;
+            });
+        }
+
+        function draw() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.font = `${fontSize}px monospace`;
+
+            drops.forEach((y, i) => {
+                const useSpecial = Math.random() < (slider.value / 100);
+                const text = useSpecial
+                    ? specialCharacters[Math.floor(Math.random() * specialCharacters.length)]
+                    : letters[Math.floor(Math.random() * letters.length)];
+
+                // Obtener el color RGB desde los campos de entrada
+                const color = getRGBColor();
+                ctx.fillStyle = color;  // Aquí se aplica el color dinámico basado en los campos RGB
+                ctx.fillText(text, i * fontSize, y * fontSize);
+
+                if (y * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+
+                drops[i]++;
+            });
+
+            // Cambiar el color de la interfaz con el mismo color
+            updateInterfaceColor(getRGBColor());
+        }
+
+        setInterval(draw, 50);
+
+        window.addEventListener('resize', () => {
+            // Ajustar el tamaño del canvas
+            canvasWidth = window.innerWidth;
+            canvasHeight = window.innerHeight;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+
+            // Recalcular el número de columnas
+            const columns = getColumns();
+            drops.length = columns;  // Redimensionar el array de gotas
+            drops.fill(1, 0, columns);  // Inicializar las gotas en la nueva cantidad de columnas
+        });
+    </script>
+</body>
+</html>
